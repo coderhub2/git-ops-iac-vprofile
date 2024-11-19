@@ -1,0 +1,65 @@
+name: "vpro-IAC"
+on: 
+  push: 
+    branches:
+      - main
+      - stage
+    paths:
+      - terraform/**
+  pull_request:
+    branches: 
+      - main
+    paths: 
+      - terraform/**
+
+env:
+#cred for deployment
+AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+#S3 BUCKET
+BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
+AWS_REGION: us-east-1
+EKS_CLUSTER: vpro-eks
+
+jobs:
+  terraform:
+    name: "apply terraform code changes"
+    runs-on: ubuntu-latest
+    defaults:
+      run: 
+        shell: bash
+        working-directory: ./terraform
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v4
+      
+      - name: setup the terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: tf_init
+        id: init
+        run: terraform init -backend-config="BUCKET=$BUCKET_TF_STATE"
+      
+      - name: terraform_fmt
+        id: fmt
+        run: terraform fmt -check
+
+      - name: terraform_validate
+        id: validate
+        run: terraform validate
+      
+      - name: terraform_plan
+        id: plan
+        run: terraform plam -input=false -out= planfile
+
+      - name: terraform_plan_status
+        id: status
+        if: steps.plan.outcome == "failure"
+        run: exit 1
+
+
+        
+
+
