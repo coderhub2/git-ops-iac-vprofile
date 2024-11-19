@@ -1,4 +1,5 @@
 name: "vpro-IAC"
+
 on: 
   push: 
     branches:
@@ -12,54 +13,46 @@ on:
     paths: 
       - terraform/**
 
-env:
-#cred for deployment
-AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-#S3 BUCKET
-BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
-AWS_REGION: us-east-1
-EKS_CLUSTER: vpro-eks
-
 jobs:
   terraform:
-    name: "apply terraform code changes"
+    name: "Apply Terraform Code Changes"
     runs-on: ubuntu-latest
     defaults:
       run: 
         shell: bash
         working-directory: ./terraform
 
+    env: # Define environment variables within the job
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
+      AWS_REGION: us-east-1
+      EKS_CLUSTER: vpro-eks
+
     steps:
-      - name: checkout the source code
+      - name: Checkout the source code
         uses: actions/checkout@v4
       
-      - name: setup the terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: tf_init
+      - name: Terraform Init
         id: init
-        run: terraform init -backend-config="BUCKET=$BUCKET_TF_STATE"
-      
-      - name: terraform_fmt
+        run: terraform init -backend-config="bucket=${{ env.BUCKET_TF_STATE }}"
+
+      - name: Terraform FMT
         id: fmt
         run: terraform fmt -check
 
-      - name: terraform_validate
+      - name: Terraform Validate
         id: validate
         run: terraform validate
       
-      - name: terraform_plan
+      - name: Terraform Plan
         id: plan
-        run: terraform plam -input=false -out= planfile
+        run: terraform plan -input=false -out=planfile
 
-      - name: terraform_plan_status
+      - name: Check Terraform Plan Status
         id: status
         if: steps.plan.outcome == "failure"
         run: exit 1
-
-
-        
-
-
