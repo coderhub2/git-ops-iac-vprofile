@@ -35,6 +35,8 @@ jobs:
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.6.3"
 
       - name: Terraform Init
         id: init
@@ -51,6 +53,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: terraform plan -input=false -out= planfile
+        continue-on-error: true
 
       - name: Check Terraform Plan Status
         id: status
